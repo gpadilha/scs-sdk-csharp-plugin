@@ -8,7 +8,7 @@ namespace SCSSdkClient {
     ///     Data Updated Event
     /// </summary>
     public class DataUpdatedEventArgs: EventArgs {
-        SCSTelemetry Data;
+        public SCSTelemetry Data;
     }
 
     /// <summary>
