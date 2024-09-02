@@ -67,7 +67,7 @@ namespace SCSSdkClient {
 
         public Exception Error { get; private set; }
 
-        public event EventHandler<DataUpdatedEventArgs> Data;
+        public event EventHandler<DataUpdatedEventArgs> DataUpdated;
 
         public event EventHandler JobStarted;
 
@@ -128,7 +128,7 @@ namespace SCSSdkClient {
 #endif
         }
 
-        private void UpdateTimerElapsed(object sender) {
+        private void UpdateTimerElapsed(object state) {
             var scsTelemetry = SharedMemory.Update<SCSTelemetry>();
 
             if (scsTelemetry == null) {
@@ -155,9 +155,12 @@ namespace SCSSdkClient {
             var time = scsTelemetry.Timestamp;
             var updated = false;
 
+            var dataUpdatedEventArgs = new DataUpdatedEventArgs();
+            dataUpdatedEventArgs.Data = scsTelemetry;
+
             if (time != lastTime || wasPaused != scsTelemetry.Paused) {
                 // time changed or game state change -> update data
-                Data?.Invoke(scsTelemetry, true);
+                DataUpdated?.Invoke(this, dataUpdatedEventArgs);
                 wasPaused = scsTelemetry.Paused;
                 lastTime = time;
                 updated = true;
@@ -169,7 +172,7 @@ namespace SCSSdkClient {
                 wasOnJob = scsTelemetry.SpecialEventsValues.OnJob;
                 if (wasOnJob) {
                     if (!updated) {
-                        Data?.Invoke(scsTelemetry, true);
+                        DataUpdated?.Invoke(this, dataUpdatedEventArgs);
                         updated = true;
                     }
 
@@ -181,7 +184,7 @@ namespace SCSSdkClient {
                 cancelled = scsTelemetry.SpecialEventsValues.JobCancelled;
 
                 if (!updated) {
-                    Data?.Invoke(scsTelemetry, true);
+                    DataUpdated?.Invoke(this, dataUpdatedEventArgs);
                     updated = true;
                 }
 
@@ -192,7 +195,7 @@ namespace SCSSdkClient {
                 delivered = scsTelemetry.SpecialEventsValues.JobDelivered;
 
                 if (!updated) {
-                    Data?.Invoke(scsTelemetry, true);
+                    DataUpdated?.Invoke(this, dataUpdatedEventArgs);
                     updated = true;
                 }
 
@@ -215,7 +218,7 @@ namespace SCSSdkClient {
                 ferry = scsTelemetry.SpecialEventsValues.Ferry;
 
                 if (!updated) {
-                    Data?.Invoke(scsTelemetry, true);
+                    DataUpdated?.Invoke(this, dataUpdatedEventArgs);
                     updated = true;
                 }
 
@@ -226,7 +229,7 @@ namespace SCSSdkClient {
                 train = scsTelemetry.SpecialEventsValues.Train;
 
                 if (!updated) {
-                    Data?.Invoke(scsTelemetry, true);
+                    DataUpdated?.Invoke(this, dataUpdatedEventArgs);
                     updated = true;
                 }
 
@@ -249,13 +252,6 @@ namespace SCSSdkClient {
                 if (scsTelemetry.SpecialEventsValues.RefuelPayed) {
                     RefuelPayed?.Invoke(this, new EventArgs());
                 }
-            }
-
-            // currently the design is that the event is called, doesn't matter if data changed
-            // also the old demo didn't used the flag and expected to be refreshed each call
-            // so without making a big change also call the event without update with false flag
-            if (!updated) {
-                Data?.Invoke(scsTelemetry, false);
             }
         }
 
